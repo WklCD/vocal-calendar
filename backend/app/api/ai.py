@@ -1,14 +1,18 @@
-"""AI 相关 API 路由：冲突检测、空闲时段推荐、每日摘要。"""
+"""AI 相关 API 路由：冲突检测、空闲时段推荐、每日摘要、TTS 语音合成。"""
 
+import base64
 from datetime import datetime, date
 
-from fastapi import APIRouter, Depends, Query
+import httpx
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
+from app.core.config import get_settings
 from app.core.database import get_db
 from app.models.user import User
 from app.schemas.event import EventResponse
+from app.schemas.voice import TTSRequest
 from app.services.ai_service import AIService
 from app.services.llm.factory import create_llm
 
@@ -90,5 +94,62 @@ async def daily_briefing(
     return {
         "code": 0,
         "data": {"briefing": briefing},
+        "message": "ok",
+    }
+
+
+@router.post("/tts")
+async def text_to_speech(
+    req: TTSRequest,
+    current_user: User = Depends(get_current_user),
+):
+    """调用 MiMo TTS API 将文本合成为语音。
+
+    返回 base64 编码的 wav 音频数据。
+    """
+    settings = get_settings()
+    api_key = settings.MIMO_API_KEY
+    if not api_key:
+        raise HTTPException(status_code=500, detail="MIMO_API_KEY 未配置")
+
+    payload = {
+        "model": "mimo-v2.5-tts",
+        "messages": [
+            {"role": "assistant", "content": req.text},
+        ],
+        "audio": {
+            "format": "wav",
+            "voice": req.voice,
+        },
+    }
+
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        try:
+            resp = await client.post(
+                "https://token-plan-cn.xiaomimimo.com/v1/chat/completions",
+                headers={
+                    "Content-Type": "application/json",
+                    "api-key": api_key,
+                },
+                json=payload,
+            )
+            resp.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            raise HTTPException(
+                status_code=e.response.status_code,
+                detail=f"MiMo TTS API 返回错误: {e.response.text}",
+            )
+        except httpx.RequestError as e:
+            raise HTTPException(status_code=502, detail=f"MiMo TTS API 请求失败: {str(e)}")
+
+    data = resp.json()
+    try:
+        audio_b64 = data["choices"][0]["message"]["audio"]["data"]
+    except (KeyError, IndexError):
+        raise HTTPException(status_code=502, detail="MiMo TTS API 返回格式异常")
+
+    return {
+        "code": 0,
+        "data": {"audio": audio_b64},
         "message": "ok",
     }

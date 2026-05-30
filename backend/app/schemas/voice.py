@@ -31,3 +31,8 @@ class VoiceHelpItem(BaseModel):
     command: str
     example: str
     description: str
+
+
+class TTSRequest(BaseModel):
+    text: str
+    voice: str = "mimo_default"

@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 from fastapi.testclient import TestClient
 from app.main import app
 from app.api.deps import get_current_user
@@ -105,3 +105,70 @@ class TestAIEndpoints:
         data = response.json()
         assert data["code"] == 0
         assert "briefing" in data["data"]
+
+    def test_tts_requires_auth(self, client):
+        """未认证请求应返回 401 或 403。"""
+        response = client.post(
+            "/api/ai/tts",
+            json={"text": "你好"},
+        )
+        assert response.status_code in (401, 403)
+
+    @patch("app.api.ai.get_settings")
+    @patch("app.api.ai.httpx.AsyncClient")
+    def test_tts_success(self, mock_client_cls, mock_get_settings, client, mock_user):
+        """已认证请求应返回 base64 音频数据。"""
+        def override_get_user():
+            return mock_user
+        app.dependency_overrides[get_current_user] = override_get_user
+
+        mock_settings = MagicMock()
+        mock_settings.MIMO_API_KEY = "test-key"
+        mock_get_settings.return_value = mock_settings
+
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.raise_for_status = MagicMock()
+        mock_resp.json.return_value = {
+            "choices": [
+                {
+                    "message": {
+                        "audio": {"data": "UklGRiQAAABXQVZFZm10IBAAAAABAAEA"},
+                    }
+                }
+            ]
+        }
+
+        mock_client = AsyncMock()
+        mock_client.post = AsyncMock(return_value=mock_resp)
+        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = AsyncMock(return_value=False)
+        mock_client_cls.return_value = mock_client
+
+        response = client.post(
+            "/api/ai/tts",
+            json={"text": "你好世界", "voice": "mimo_default"},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["code"] == 0
+        assert "audio" in data["data"]
+        assert data["data"]["audio"] == "UklGRiQAAABXQVZFZm10IBAAAAABAAEA"
+
+    @patch("app.api.ai.get_settings")
+    def test_tts_missing_api_key(self, mock_get_settings, client, mock_user):
+        """未配置 MIMO_API_KEY 时应返回 500。"""
+        def override_get_user():
+            return mock_user
+        app.dependency_overrides[get_current_user] = override_get_user
+
+        mock_settings = MagicMock()
+        mock_settings.MIMO_API_KEY = ""
+        mock_get_settings.return_value = mock_settings
+
+        response = client.post(
+            "/api/ai/tts",
+            json={"text": "你好"},
+        )
+        assert response.status_code == 500
+        assert "MIMO_API_KEY" in response.json()["detail"]
