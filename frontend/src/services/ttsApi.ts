@@ -9,10 +9,10 @@ export interface MiMoVoice {
 
 export const MIMO_VOICES: MiMoVoice[] = [
   { id: 'mimo_default', name: 'MiMo默认', lang: 'zh', gender: '女' },
-  { id: 'yueyue', name: '悦悦', lang: 'zh', gender: '女' },
-  { id: 'tiantian', name: '甜甜', lang: 'zh', gender: '女' },
-  { id: 'achen', name: '阿辰', lang: 'zh', gender: '男' },
-  { id: 'alin', name: '阿林', lang: 'zh', gender: '男' },
+  { id: '冰糖', name: '冰糖', lang: 'zh', gender: '女' },
+  { id: '茉莉', name: '茉莉', lang: 'zh', gender: '女' },
+  { id: '苏打', name: '苏打', lang: 'zh', gender: '男' },
+  { id: '白桦', name: '白桦', lang: 'zh', gender: '男' },
   { id: 'Mia', name: 'Mia', lang: 'en', gender: '女' },
   { id: 'Chloe', name: 'Chloe', lang: 'en', gender: '女' },
   { id: 'Milo', name: 'Milo', lang: 'en', gender: '男' },
