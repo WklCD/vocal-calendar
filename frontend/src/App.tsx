@@ -2,10 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './features/auth/LoginPage';
 import RegisterPage from './features/auth/RegisterPage';
 import AuthGuard from './features/auth/AuthGuard';
-
-function CalendarPlaceholder() {
-  return <div style={{ padding: '2rem' }}><h1>日历页面 — 即将实现</h1></div>;
-}
+import CalendarPage from './features/calendar/CalendarPage';
 
 function App() {
   return (
@@ -17,7 +14,7 @@ function App() {
           path="/calendar"
           element={
             <AuthGuard>
-              <CalendarPlaceholder />
+              <CalendarPage />
             </AuthGuard>
           }
         />
