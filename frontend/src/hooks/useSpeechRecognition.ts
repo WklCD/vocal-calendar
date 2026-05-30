@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback } from 'react';
 
 interface UseSpeechRecognitionReturn {
   isListening: boolean;
@@ -21,7 +21,6 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
 
   const recognitionRef = useRef<any>(null);
   const transcriptRef = useRef('');
-  const isActiveRef = useRef(false);
 
   const SpeechRecognition =
     typeof window !== 'undefined'
@@ -30,9 +29,33 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
 
   const isSupported = !!SpeechRecognition;
 
-  useEffect(() => {
+  const cleanupRecognition = useCallback(() => {
+    if (recognitionRef.current) {
+      recognitionRef.current.onstart = null;
+      recognitionRef.current.onresult = null;
+      recognitionRef.current.onerror = null;
+      recognitionRef.current.onend = null;
+      try {
+        recognitionRef.current.abort();
+      } catch {}
+      recognitionRef.current = null;
+    }
+  }, []);
+
+  const startListening = useCallback(() => {
     if (!SpeechRecognition) return;
 
+    // Clean up any existing instance
+    cleanupRecognition();
+
+    // Reset state
+    transcriptRef.current = '';
+    setTranscript('');
+    setInterimTranscript('');
+    setConfidence(0);
+    setError(null);
+
+    // Create a fresh instance each time
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = true;
@@ -40,7 +63,6 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
     recognition.maxAlternatives = 1;
 
     recognition.onstart = () => {
-      isActiveRef.current = true;
       setIsListening(true);
       setError(null);
     };
@@ -70,60 +92,33 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
       if (event.error !== 'aborted' && event.error !== 'no-speech') {
         setError(`语音识别错误: ${event.error}`);
       }
-      isActiveRef.current = false;
       setIsListening(false);
     };
 
     recognition.onend = () => {
-      isActiveRef.current = false;
       setIsListening(false);
     };
 
     recognitionRef.current = recognition;
 
-    return () => {
-      try {
-        recognition.abort();
-      } catch {}
-      isActiveRef.current = false;
-    };
-  }, [SpeechRecognition]);
-
-  const startListening = useCallback(() => {
-    if (!recognitionRef.current) return;
-
-    // Reset transcript
-    transcriptRef.current = '';
-    setTranscript('');
-    setInterimTranscript('');
-    setConfidence(0);
-    setError(null);
-
-    // Abort any existing session, then start fresh
-    if (isActiveRef.current) {
-      try {
-        recognitionRef.current.abort();
-      } catch {}
-      isActiveRef.current = false;
-    }
-
     try {
-      recognitionRef.current.start();
+      recognition.start();
     } catch (e) {
-      // If start fails, try once more after abort
-      try {
-        recognitionRef.current.abort();
-        recognitionRef.current.start();
-      } catch {}
+      console.error('Failed to start speech recognition:', e);
+      setError('无法启动语音识别');
     }
-  }, []);
+  }, [SpeechRecognition, cleanupRecognition]);
 
   const stopListening = useCallback(() => {
-    if (!recognitionRef.current) return;
-    try {
-      recognitionRef.current.stop();
-    } catch {}
-    isActiveRef.current = false;
+    if (recognitionRef.current) {
+      // Remove callbacks first to prevent onend from resetting state
+      recognitionRef.current.onend = null;
+      recognitionRef.current.onerror = null;
+      try {
+        recognitionRef.current.stop();
+      } catch {}
+      recognitionRef.current = null;
+    }
     setIsListening(false);
   }, []);
 

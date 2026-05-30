@@ -47,22 +47,24 @@ export default function VoicePanel() {
   }, [startListening]);
 
   const handleStopRecording = useCallback(() => {
+    // Capture current transcript before stopping
+    const currentTranscript = transcript;
+    const currentInterim = interimTranscript;
+
     stopListening();
     stopAudioStream();
 
-    // Process the transcript after a short delay to capture final results
-    setTimeout(() => {
-      const finalText = transcript + interimTranscript;
-      if (finalText.trim()) {
-        setProcessing(true);
-        // TODO: Send to backend /api/voice/command
-        setTimeout(() => {
-          setResponse(`已收到指令: "${finalText}"`);
-          setProcessing(false);
-          speak(`已收到指令: ${finalText}`);
-        }, 1000);
-      }
-    }, 300);
+    // Process the transcript
+    const finalText = (currentTranscript + currentInterim).trim();
+    if (finalText) {
+      setProcessing(true);
+      // TODO: Send to backend /api/voice/command
+      setTimeout(() => {
+        setResponse(`已收到指令: "${finalText}"`);
+        setProcessing(false);
+        speak(`已收到指令: ${finalText}`);
+      }, 1000);
+    }
   }, [stopListening, stopAudioStream, transcript, interimTranscript, setProcessing, setResponse, speak]);
 
   const handleToggle = useCallback(() => {
