@@ -120,7 +120,7 @@ export default function VoicePanel() {
           <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
             💡 试试说: "帮我创建明天下午3点的会议"
             <br />
-            ⚠️ 推荐使用 Edge 浏览器（Chrome 语音服务在国内不可用）
+            ⚠️ 语音功能推荐使用 Safari 或 Edge（Chrome 在国内不可用）
           </div>
         </div>
       )}
