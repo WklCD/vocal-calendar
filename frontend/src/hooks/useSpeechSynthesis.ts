@@ -1,56 +1,45 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useRef } from 'react';
+import { ttsApi } from '../services/ttsApi';
+import { useTtsStore } from '../stores/useTtsStore';
 
 interface UseSpeechSynthesisReturn {
-  speak: (text: string) => void;
+  speak: (text: string) => Promise<void>;
   stop: () => void;
   isSpeaking: boolean;
   isSupported: boolean;
-  voices: SpeechSynthesisVoice[];
 }
 
 export function useSpeechSynthesis(): UseSpeechSynthesisReturn {
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const { voice } = useTtsStore();
+  const speakingRef = useRef(false);
 
-  const isSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
+  const isSupported = true;
 
-  useEffect(() => {
-    if (!isSupported) return;
+  const speak = useCallback(async (text: string) => {
+    if (speakingRef.current) {
+      ttsApi.stopAudio();
+    }
 
-    const loadVoices = () => {
-      const availableVoices = window.speechSynthesis.getVoices();
-      setVoices(availableVoices);
-    };
+    try {
+      speakingRef.current = true;
+      setIsSpeaking(true);
 
-    loadVoices();
-    window.speechSynthesis.onvoiceschanged = loadVoices;
-
-    return () => { window.speechSynthesis.onvoiceschanged = null; };
-  }, [isSupported]);
-
-  const speak = useCallback((text: string) => {
-    if (!isSupported) return;
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'zh-CN';
-    utterance.rate = 1;
-    utterance.pitch = 1;
-    utterance.volume = 1;
-
-    const chineseVoice = voices.find((v) => v.lang.startsWith('zh') || v.lang.includes('CN'));
-    if (chineseVoice) { utterance.voice = chineseVoice; }
-
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
-    window.speechSynthesis.speak(utterance);
-  }, [isSupported, voices]);
+      const audioBase64 = await ttsApi.synthesize(text, voice);
+      await ttsApi.playAudio(audioBase64);
+    } catch (error) {
+      console.error('TTS synthesis failed:', error);
+    } finally {
+      speakingRef.current = false;
+      setIsSpeaking(false);
+    }
+  }, [voice]);
 
   const stop = useCallback(() => {
-    if (!isSupported) return;
-    window.speechSynthesis.cancel();
+    ttsApi.stopAudio();
+    speakingRef.current = false;
     setIsSpeaking(false);
-  }, [isSupported]);
+  }, []);
 
-  return { speak, stop, isSpeaking, isSupported, voices };
+  return { speak, stop, isSpeaking, isSupported };
 }

@@ -6,6 +6,7 @@ import VoicePanel from '../voice/VoicePanel';
 import ReminderToast from '../reminders/ReminderToast';
 import DailyBriefing from '../ai/DailyBriefing';
 import FreeSlotSuggest from '../ai/FreeSlotSuggest';
+import VoiceSelector from '../settings/VoiceSelector';
 import { useAuthStore } from '../../stores/useAuthStore';
 import { useEventStore } from '../../stores/useEventStore';
 import { useNavigate } from 'react-router-dom';
@@ -20,6 +21,7 @@ export default function CalendarPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const [contextMenu, setContextMenu] = useState<{ isOpen: boolean; position: { x: number; y: number }; event: CalendarEvent | null }>({ isOpen: false, position: { x: 0, y: 0 }, event: null });
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   useEffect(() => {
     const now = new Date();
@@ -56,10 +58,41 @@ export default function CalendarPage() {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
           <button onClick={handleCreateEvent} style={{ padding: 'var(--space-2) var(--space-4)', background: 'var(--color-primary)', color: 'var(--color-text-inverse)', borderRadius: 'var(--radius-md)', fontSize: 'var(--font-size-sm)', fontWeight: 600 }}>+ 新建事件</button>
+          <button
+            onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+            style={{
+              padding: 'var(--space-2)',
+              background: isSettingsOpen ? 'var(--color-primary)' : 'transparent',
+              color: isSettingsOpen ? 'var(--color-text-inverse)' : 'var(--color-text-secondary)',
+              borderRadius: 'var(--radius-md)',
+              fontSize: 'var(--font-size-lg)',
+              border: isSettingsOpen ? 'none' : '1px solid var(--color-border)',
+              width: '36px',
+              height: '36px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+            title="设置"
+          >
+            ⚙️
+          </button>
           <span style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>{user?.username}</span>
           <button onClick={handleLogout} style={{ padding: 'var(--space-2) var(--space-4)', background: 'transparent', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>退出</button>
         </div>
       </header>
+
+      {isSettingsOpen && (
+        <div style={{
+          background: 'var(--color-surface)',
+          borderBottom: '1px solid var(--color-border)',
+          maxHeight: '400px',
+          overflowY: 'auto',
+          flexShrink: 0,
+        }}>
+          <VoiceSelector />
+        </div>
+      )}
 
       <main style={{ flex: 1, padding: 'var(--space-4)', overflow: 'hidden' }}>
         <DailyBriefing />
