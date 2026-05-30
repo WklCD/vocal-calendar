@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 import { useSpeechSynthesis } from '../../hooks/useSpeechSynthesis';
 import { useVoiceStore } from '../../stores/useVoiceStore';
@@ -25,6 +25,8 @@ export default function VoicePanel() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [audioStream, setAudioStream] = useState<MediaStream | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const wasListeningRef = useRef(false);
+  const manualStopRef = useRef(false);
 
   const stopAudioStream = useCallback(() => {
     if (streamRef.current) {
@@ -34,8 +36,32 @@ export default function VoicePanel() {
     }
   }, []);
 
+  // Process transcript when recognition ends
+  const processTranscript = useCallback((text: string) => {
+    const finalText = text.trim();
+    if (!finalText) return;
+
+    setProcessing(true);
+    stopAudioStream();
+    // TODO: Send to backend /api/voice/command
+    setTimeout(() => {
+      setResponse(`已收到指令: "${finalText}"`);
+      setProcessing(false);
+      speak(`已收到指令: ${finalText}`);
+    }, 1000);
+  }, [setProcessing, setResponse, speak, stopAudioStream]);
+
+  // Detect auto-stop: isListening went from true to false (not by manual stop)
+  useEffect(() => {
+    if (wasListeningRef.current && !isListening && !manualStopRef.current) {
+      // Recognition ended automatically (user stopped speaking)
+      processTranscript(transcript + interimTranscript);
+    }
+    wasListeningRef.current = isListening;
+    manualStopRef.current = false;
+  }, [isListening, transcript, interimTranscript, processTranscript]);
+
   const handleStartRecording = useCallback(async () => {
-    // Get audio stream for waveform visualization
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
@@ -47,25 +73,13 @@ export default function VoicePanel() {
   }, [startListening]);
 
   const handleStopRecording = useCallback(() => {
-    // Capture current transcript before stopping
+    manualStopRef.current = true;
     const currentTranscript = transcript;
     const currentInterim = interimTranscript;
 
     stopListening();
-    stopAudioStream();
-
-    // Process the transcript
-    const finalText = (currentTranscript + currentInterim).trim();
-    if (finalText) {
-      setProcessing(true);
-      // TODO: Send to backend /api/voice/command
-      setTimeout(() => {
-        setResponse(`已收到指令: "${finalText}"`);
-        setProcessing(false);
-        speak(`已收到指令: ${finalText}`);
-      }, 1000);
-    }
-  }, [stopListening, stopAudioStream, transcript, interimTranscript, setProcessing, setResponse, speak]);
+    processTranscript(currentTranscript + currentInterim);
+  }, [stopListening, transcript, interimTranscript, processTranscript]);
 
   const handleToggle = useCallback(() => {
     if (isListening) {
@@ -78,6 +92,7 @@ export default function VoicePanel() {
   }, [isListening, handleStartRecording, handleStopRecording, resetTranscript, setResponse]);
 
   const handleClose = () => {
+    manualStopRef.current = true;
     stopListening();
     stopAudioStream();
     resetTranscript();
