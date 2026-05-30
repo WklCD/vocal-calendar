@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 import { useSpeechSynthesis } from '../../hooks/useSpeechSynthesis';
 import { useVoiceStore } from '../../stores/useVoiceStore';
+import { voiceApi } from '../../services/voiceApi';
 import VoiceButton from './VoiceButton';
 import VoiceStatus from './VoiceStatus';
 import WaveformVisualizer from './WaveformVisualizer';
@@ -37,18 +38,22 @@ export default function VoicePanel() {
   }, []);
 
   // Process transcript when recognition ends
-  const processTranscript = useCallback((text: string) => {
+  const processTranscript = useCallback(async (text: string) => {
     const finalText = text.trim();
     if (!finalText) return;
 
     setProcessing(true);
     stopAudioStream();
-    // TODO: Send to backend /api/voice/command
-    setTimeout(() => {
-      setResponse(`已收到指令: "${finalText}"`);
+    try {
+      const resp = await voiceApi.sendCommand(finalText);
+      const data = resp.data.data;
+      setResponse(data.response_text);
+      speak(data.response_text);
+    } catch {
+      setResponse('语音指令处理失败，请重试');
+    } finally {
       setProcessing(false);
-      speak(`已收到指令: ${finalText}`);
-    }, 1000);
+    }
   }, [setProcessing, setResponse, speak, stopAudioStream]);
 
   // Detect auto-stop: isListening went from true to false (not by manual stop)

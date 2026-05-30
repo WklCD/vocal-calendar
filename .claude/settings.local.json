@@ -25,7 +25,8 @@
       "Bash(brew --version)",
       "Bash(alembic revision *)",
       "Bash(alembic upgrade *)",
-      "Bash(docker exec vocal-calendar-db *)"
+      "Bash(docker exec vocal-calendar-db *)",
+      "Bash(pytest *)"
     ]
   }
 }

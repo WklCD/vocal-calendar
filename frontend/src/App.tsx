@@ -3,6 +3,7 @@ import LoginPage from './features/auth/LoginPage';
 import RegisterPage from './features/auth/RegisterPage';
 import AuthGuard from './features/auth/AuthGuard';
 import CalendarPage from './features/calendar/CalendarPage';
+import VoiceHistory from './features/voice/VoiceHistory';
 
 function App() {
   return (
@@ -15,6 +16,14 @@ function App() {
           element={
             <AuthGuard>
               <CalendarPage />
+            </AuthGuard>
+          }
+        />
+        <Route
+          path="/voice-history"
+          element={
+            <AuthGuard>
+              <VoiceHistory />
             </AuthGuard>
           }
         />
