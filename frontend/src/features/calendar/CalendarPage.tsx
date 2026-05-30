@@ -2,6 +2,7 @@ import { useState } from 'react';
 import CalendarView from './CalendarView';
 import EventModal from '../events/EventModal';
 import EventContextMenu from '../events/EventContextMenu';
+import VoicePanel from '../voice/VoicePanel';
 import { useAuthStore } from '../../stores/useAuthStore';
 import { useEventStore } from '../../stores/useEventStore';
 import { useNavigate } from 'react-router-dom';
@@ -58,6 +59,8 @@ export default function CalendarPage() {
       <EventModal isOpen={isModalOpen} event={editingEvent} onSubmit={handleSubmitEvent} onClose={() => { setIsModalOpen(false); setEditingEvent(null); }} />
 
       <EventContextMenu isOpen={contextMenu.isOpen} position={contextMenu.position} onEdit={() => { setEditingEvent(contextMenu.event); setIsModalOpen(true); setContextMenu({ isOpen: false, position: { x: 0, y: 0 }, event: null }); }} onDelete={handleDeleteEvent} onClose={() => setContextMenu({ isOpen: false, position: { x: 0, y: 0 }, event: null })} />
+
+      <VoicePanel />
     </div>
   );
 }
