@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 import { useSpeechSynthesis } from '../../hooks/useSpeechSynthesis';
 import { useVoiceStore } from '../../stores/useVoiceStore';
+import { useEventStore } from '../../stores/useEventStore';
 import { voiceApi } from '../../services/voiceApi';
 import VoiceButton from './VoiceButton';
 import VoiceStatus from './VoiceStatus';
@@ -22,6 +23,7 @@ export default function VoicePanel() {
 
   const { speak } = useSpeechSynthesis();
   const { isProcessing, response, setProcessing, setResponse } = useVoiceStore();
+  const { fetchEvents, currentDate } = useEventStore();
 
   const [isExpanded, setIsExpanded] = useState(false);
   const [audioStream, setAudioStream] = useState<MediaStream | null>(null);
@@ -49,12 +51,17 @@ export default function VoicePanel() {
       const data = resp.data.data;
       setResponse(data.response_text);
       speak(data.response_text);
+      // Refresh calendar events after successful voice command
+      const now = currentDate || new Date();
+      const start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
+      fetchEvents(start, end);
     } catch {
       setResponse('语音指令处理失败，请重试');
     } finally {
       setProcessing(false);
     }
-  }, [setProcessing, setResponse, speak, stopAudioStream]);
+  }, [setProcessing, setResponse, speak, stopAudioStream, fetchEvents, currentDate]);
 
   // Detect auto-stop: isListening went from true to false (not by manual stop)
   useEffect(() => {

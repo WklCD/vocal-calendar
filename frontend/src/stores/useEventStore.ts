@@ -1,11 +1,13 @@
 import { create } from 'zustand';
 import type { CalendarEvent, CalendarViewType } from '../features/calendar/types';
+import { eventApi } from '../services/eventApi';
 
 interface EventState {
   events: CalendarEvent[];
   currentView: CalendarViewType;
   currentDate: Date;
   selectedEvent: CalendarEvent | null;
+  loading: boolean;
 
   setEvents: (events: CalendarEvent[]) => void;
   addEvent: (event: CalendarEvent) => void;
@@ -14,6 +16,7 @@ interface EventState {
   setCurrentView: (view: CalendarViewType) => void;
   setCurrentDate: (date: Date) => void;
   setSelectedEvent: (event: CalendarEvent | null) => void;
+  fetchEvents: (start: string, end: string) => Promise<void>;
 
   // Mock data for development (remove when backend is ready)
   loadMockEvents: () => void;
@@ -24,6 +27,7 @@ export const useEventStore = create<EventState>((set) => ({
   currentView: 'dayGridMonth',
   currentDate: new Date(),
   selectedEvent: null,
+  loading: false,
 
   setEvents: (events) => set({ events }),
   addEvent: (event) => set((state) => ({ events: [...state.events, event] })),
@@ -36,6 +40,32 @@ export const useEventStore = create<EventState>((set) => ({
   setCurrentView: (view) => set({ currentView: view }),
   setCurrentDate: (date) => set({ currentDate: date }),
   setSelectedEvent: (event) => set({ selectedEvent: event }),
+
+  fetchEvents: async (start: string, end: string) => {
+    set({ loading: true });
+    try {
+      const resp = await eventApi.getEvents(start, end);
+      const rawEvents = resp.data.data as unknown as Array<Record<string, unknown>>;
+      const events: CalendarEvent[] = rawEvents.map((e) => ({
+        id: String(e.id),
+        title: String(e.title),
+        start: String(e.start_time),
+        end: String(e.end_time),
+        allDay: Boolean(e.is_all_day),
+        color: e.color ? String(e.color) : undefined,
+        location: e.location ? String(e.location) : undefined,
+        description: e.description ? String(e.description) : undefined,
+        categoryId: e.category_id ? String(e.category_id) : undefined,
+        priority: typeof e.priority === 'number' ? e.priority : undefined,
+        recurrenceRule: e.recurrence_rule ? String(e.recurrence_rule) : undefined,
+      }));
+      set({ events });
+    } catch (error) {
+      console.error('Failed to fetch events:', error);
+    } finally {
+      set({ loading: false });
+    }
+  },
 
   loadMockEvents: () => {
     const today = new Date();

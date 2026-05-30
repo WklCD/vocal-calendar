@@ -13,7 +13,7 @@ interface CalendarViewProps {
 }
 
 export default function CalendarView({ onEventClick, onEventContextMenu }: CalendarViewProps) {
-  const { events, currentView, currentDate, setCurrentView, setCurrentDate } = useEventStore();
+  const { events, currentView, currentDate, setCurrentView, setCurrentDate, fetchEvents } = useEventStore();
 
   const calendarEvents = events.map((event) => ({
     id: event.id,
@@ -43,7 +43,10 @@ export default function CalendarView({ onEventClick, onEventContextMenu }: Calen
         weekends={true}
         height="calc(100vh - var(--topbar-height) - var(--space-8))"
         viewDidMount={(info) => { setCurrentView(info.view.type as CalendarViewType); }}
-        datesSet={(info) => { setCurrentDate(info.view.currentStart); }}
+        datesSet={(info) => {
+          setCurrentDate(info.view.currentStart);
+          fetchEvents(info.start.toISOString(), info.end.toISOString());
+        }}
         eventClick={(info) => { const originalEvent = info.event.extendedProps.originalEvent; if (originalEvent && onEventClick) { onEventClick(originalEvent); } }}
         eventDidMount={(info) => {
           if (onEventContextMenu) {

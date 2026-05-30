@@ -12,14 +12,20 @@ import type { CalendarEvent } from './types';
 
 export default function CalendarPage() {
   const { user, logout } = useAuthStore();
-  const { loadMockEvents, addEvent, updateEvent, removeEvent } = useEventStore();
+  const { fetchEvents, addEvent, updateEvent, removeEvent } = useEventStore();
   const navigate = useNavigate();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const [contextMenu, setContextMenu] = useState<{ isOpen: boolean; position: { x: number; y: number }; event: CalendarEvent | null }>({ isOpen: false, position: { x: 0, y: 0 }, event: null });
 
-  useEffect(() => { loadMockEvents(); }, [loadMockEvents]);
+  useEffect(() => {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
+    fetchEvents(start, end);
+    // Fallback: loadMockEvents() for development without backend
+  }, [fetchEvents]);
 
   const handleLogout = () => { logout(); navigate('/login'); };
 
