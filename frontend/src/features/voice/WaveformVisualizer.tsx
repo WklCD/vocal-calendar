@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useAudioVisualizer } from '../../hooks/useAudioVisualizer';
 
 interface WaveformVisualizerProps {
@@ -8,11 +9,13 @@ interface WaveformVisualizerProps {
 export default function WaveformVisualizer({ stream, isActive }: WaveformVisualizerProps) {
   const { canvasRef, startVisualization, stopVisualization } = useAudioVisualizer();
 
-  if (isActive && stream) {
-    startVisualization(stream);
-  } else {
-    stopVisualization();
-  }
+  useEffect(() => {
+    if (isActive && stream) {
+      startVisualization(stream);
+    } else {
+      stopVisualization();
+    }
+  }, [isActive, stream, startVisualization, stopVisualization]);
 
   return (
     <canvas
