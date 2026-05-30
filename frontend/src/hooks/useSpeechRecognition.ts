@@ -45,22 +45,18 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
   const startListening = useCallback(() => {
     if (!SpeechRecognition) return;
 
-    // Clean up any existing instance
     cleanupRecognition();
 
-    // Reset state
     transcriptRef.current = '';
     setTranscript('');
     setInterimTranscript('');
     setConfidence(0);
     setError(null);
 
-    // Create a fresh instance each time
     const recognition = new SpeechRecognition();
-    recognition.continuous = true;
+    recognition.continuous = false;
     recognition.interimResults = true;
     recognition.lang = 'zh-CN';
-    recognition.maxAlternatives = 1;
 
     recognition.onstart = () => {
       setIsListening(true);
@@ -89,7 +85,9 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
     };
 
     recognition.onerror = (event: any) => {
-      if (event.error !== 'aborted' && event.error !== 'no-speech') {
+      if (event.error === 'not-allowed') {
+        setError('麦克风权限被拒绝，请在浏览器设置中允许麦克风访问');
+      } else if (event.error !== 'aborted' && event.error !== 'no-speech') {
         setError(`语音识别错误: ${event.error}`);
       }
       setIsListening(false);
@@ -104,14 +102,12 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
     try {
       recognition.start();
     } catch (e) {
-      console.error('Failed to start speech recognition:', e);
       setError('无法启动语音识别');
     }
   }, [SpeechRecognition, cleanupRecognition]);
 
   const stopListening = useCallback(() => {
     if (recognitionRef.current) {
-      // Remove callbacks first to prevent onend from resetting state
       recognitionRef.current.onend = null;
       recognitionRef.current.onerror = null;
       try {
