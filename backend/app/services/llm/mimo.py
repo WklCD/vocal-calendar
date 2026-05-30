@@ -43,7 +43,7 @@ class MiMoLLM(BaseLLM):
         settings = get_settings()
         self.api_key = api_key or getattr(settings, "MIMO_API_KEY", "")
         self.model = model
-        self.base_url = "https://api.xiaomimimo.com/v1"
+        self.base_url = "https://token-plan-cn.xiaomimimo.com/v1"
 
     async def chat(self, messages: list[dict[str, str]], **kwargs) -> str:
         async with httpx.AsyncClient(timeout=30.0) as client:
