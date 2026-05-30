@@ -7,50 +7,77 @@ import VoiceStatus from './VoiceStatus';
 import WaveformVisualizer from './WaveformVisualizer';
 
 export default function VoicePanel() {
-  const { isListening, transcript, interimTranscript, confidence, isSupported, error: recognitionError, startListening, stopListening, resetTranscript } = useSpeechRecognition();
-  const { speak, isSpeaking } = useSpeechSynthesis();
-  const { isProcessing, response, setProcessing, setResponse, reset } = useVoiceStore();
+  const {
+    isListening,
+    transcript,
+    interimTranscript,
+    confidence,
+    isSupported,
+    error: recognitionError,
+    startListening,
+    stopListening,
+    resetTranscript,
+  } = useSpeechRecognition();
+
+  const { speak } = useSpeechSynthesis();
+  const { isProcessing, response, setProcessing, setResponse } = useVoiceStore();
 
   const [isExpanded, setIsExpanded] = useState(false);
   const [audioStream, setAudioStream] = useState<MediaStream | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  const handleToggle = useCallback(async () => {
-    if (isListening) {
-      stopListening();
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((t) => t.stop());
-        streamRef.current = null;
-        setAudioStream(null);
-      }
+  const stopAudioStream = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+      setAudioStream(null);
+    }
+  }, []);
+
+  const handleStartRecording = useCallback(async () => {
+    // Get audio stream for waveform visualization
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      setAudioStream(stream);
+    } catch {
+      // Audio stream not available, still use speech recognition
+    }
+    startListening();
+  }, [startListening]);
+
+  const handleStopRecording = useCallback(() => {
+    stopListening();
+    stopAudioStream();
+
+    // Process the transcript after a short delay to capture final results
+    setTimeout(() => {
       const finalText = transcript + interimTranscript;
       if (finalText.trim()) {
         setProcessing(true);
+        // TODO: Send to backend /api/voice/command
         setTimeout(() => {
           setResponse(`已收到指令: "${finalText}"`);
           setProcessing(false);
           speak(`已收到指令: ${finalText}`);
         }, 1000);
       }
+    }, 300);
+  }, [stopListening, stopAudioStream, transcript, interimTranscript, setProcessing, setResponse, speak]);
+
+  const handleToggle = useCallback(() => {
+    if (isListening) {
+      handleStopRecording();
     } else {
       resetTranscript();
       setResponse(null);
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        streamRef.current = stream;
-        setAudioStream(stream);
-      } catch { }
-      startListening();
+      handleStartRecording();
     }
-  }, [isListening, transcript, interimTranscript, startListening, stopListening, resetTranscript, setProcessing, setResponse, speak]);
+  }, [isListening, handleStartRecording, handleStopRecording, resetTranscript, setResponse]);
 
   const handleClose = () => {
-    if (isListening) { stopListening(); }
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((t) => t.stop());
-      streamRef.current = null;
-      setAudioStream(null);
-    }
+    stopListening();
+    stopAudioStream();
     resetTranscript();
     setResponse(null);
     setIsExpanded(false);
@@ -64,22 +91,47 @@ export default function VoicePanel() {
             <span style={{ fontWeight: 600, fontSize: 'var(--font-size-sm)' }}>🎙️ 语音助手</span>
             <button onClick={handleClose} style={{ background: 'transparent', padding: 'var(--space-1)', fontSize: 'var(--font-size-lg)' }}>✕</button>
           </div>
+
           <WaveformVisualizer stream={audioStream} isActive={isListening} />
+
           <VoiceStatus isListening={isListening} isProcessing={isProcessing} confidence={confidence} error={recognitionError} />
+
           <div style={{ minHeight: '60px', padding: 'var(--space-3)', background: 'var(--color-bg-secondary)', borderRadius: 'var(--radius-md)', fontSize: 'var(--font-size-sm)', color: 'var(--color-text)' }}>
             {transcript || interimTranscript ? (
-              <><span>{transcript}</span><span style={{ color: 'var(--color-text-secondary)' }}>{interimTranscript}</span></>
+              <>
+                <span>{transcript}</span>
+                <span style={{ color: 'var(--color-text-secondary)' }}>{interimTranscript}</span>
+              </>
             ) : (
-              <span style={{ color: 'var(--color-text-disabled)' }}>{isListening ? '请说话...' : '点击麦克风开始语音指令'}</span>
+              <span style={{ color: 'var(--color-text-disabled)' }}>
+                {isListening ? '请说话...' : '点击麦克风开始语音指令'}
+              </span>
             )}
           </div>
+
           {response && (
-            <div style={{ padding: 'var(--space-3)', background: 'rgba(52, 168, 83, 0.1)', borderRadius: 'var(--radius-md)', fontSize: 'var(--font-size-sm)', color: 'var(--color-accent)' }}>💬 {response}</div>
+            <div style={{ padding: 'var(--space-3)', background: 'rgba(52, 168, 83, 0.1)', borderRadius: 'var(--radius-md)', fontSize: 'var(--font-size-sm)', color: 'var(--color-accent)' }}>
+              💬 {response}
+            </div>
           )}
-          <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>💡 试试说: "帮我创建明天下午3点的会议"</div>
+
+          <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
+            💡 试试说: "帮我创建明天下午3点的会议"
+          </div>
         </div>
       )}
-      <VoiceButton isListening={isListening} isSupported={isSupported} onToggle={() => { if (!isExpanded) { setIsExpanded(true); } else { handleToggle(); } }} />
+
+      <VoiceButton
+        isListening={isListening}
+        isSupported={isSupported}
+        onToggle={() => {
+          if (!isExpanded) {
+            setIsExpanded(true);
+          } else {
+            handleToggle();
+          }
+        }}
+      />
     </div>
   );
 }
