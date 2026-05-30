@@ -11,7 +11,7 @@ from app.core.config import get_settings
 from app.core.database import Base
 
 # 导入所有模型以便 Alembic 能检测到
-# from app.models import user, event, reminder, voice_log  # 后续阶段添加
+from app.models import user  # noqa: F401
 
 config = context.config
 config.set_main_option("sqlalchemy.url", get_settings().DATABASE_URL)
