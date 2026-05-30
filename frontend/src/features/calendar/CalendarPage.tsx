@@ -4,6 +4,8 @@ import EventModal from '../events/EventModal';
 import EventContextMenu from '../events/EventContextMenu';
 import VoicePanel from '../voice/VoicePanel';
 import ReminderToast from '../reminders/ReminderToast';
+import DailyBriefing from '../ai/DailyBriefing';
+import FreeSlotSuggest from '../ai/FreeSlotSuggest';
 import { useAuthStore } from '../../stores/useAuthStore';
 import { useEventStore } from '../../stores/useEventStore';
 import { useNavigate } from 'react-router-dom';
@@ -60,6 +62,8 @@ export default function CalendarPage() {
       </header>
 
       <main style={{ flex: 1, padding: 'var(--space-4)', overflow: 'hidden' }}>
+        <DailyBriefing />
+        <FreeSlotSuggest />
         <CalendarView onEventClick={(event) => { setEditingEvent(event); setIsModalOpen(true); }} onEventContextMenu={(event, position) => { setContextMenu({ isOpen: true, position, event }); }} />
       </main>
 
