@@ -7,6 +7,11 @@ import ReminderToast from '../reminders/ReminderToast';
 import DailyBriefing from '../ai/DailyBriefing';
 import FreeSlotSuggest from '../ai/FreeSlotSuggest';
 import VoiceSelector from '../settings/VoiceSelector';
+import WeatherBadge from '../weather/WeatherBadge';
+import HolidayBadge from '../holidays/HolidayBadge';
+import TimeStats from '../stats/TimeStats';
+import ShareLink from '../share/ShareLink';
+import ExportMenu from '../export/ExportMenu';
 import { useAuthStore } from '../../stores/useAuthStore';
 import { useEventStore } from '../../stores/useEventStore';
 import { useNavigate } from 'react-router-dom';
@@ -55,6 +60,7 @@ export default function CalendarPage() {
       <header style={{ height: 'var(--topbar-height)', background: 'var(--color-surface)', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 var(--space-6)', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
           <span style={{ fontSize: 'var(--font-size-xl)', fontWeight: 700, color: 'var(--color-primary)' }}>Vocal Calendar</span>
+          <WeatherBadge />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
           <button onClick={handleCreateEvent} style={{ padding: 'var(--space-2) var(--space-4)', background: 'var(--color-primary)', color: 'var(--color-text-inverse)', borderRadius: 'var(--radius-md)', fontSize: 'var(--font-size-sm)', fontWeight: 600 }}>+ 新建事件</button>
@@ -91,12 +97,16 @@ export default function CalendarPage() {
           flexShrink: 0,
         }}>
           <VoiceSelector />
+          <ShareLink />
+          <ExportMenu />
         </div>
       )}
 
       <main style={{ flex: 1, padding: 'var(--space-4)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         <DailyBriefing />
         <FreeSlotSuggest />
+        <HolidayBadge year={new Date().getFullYear()} month={new Date().getMonth() + 1} />
+        <TimeStats />
         <div style={{ flex: 1, minHeight: 0 }}>
           <CalendarView onEventClick={(event) => { setEditingEvent(event); setIsModalOpen(true); }} onEventContextMenu={(event, position) => { setContextMenu({ isOpen: true, position, event }); }} />
         </div>

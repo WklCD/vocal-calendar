@@ -4,6 +4,7 @@ import RegisterPage from './features/auth/RegisterPage';
 import AuthGuard from './features/auth/AuthGuard';
 import CalendarPage from './features/calendar/CalendarPage';
 import VoiceHistory from './features/voice/VoiceHistory';
+import PublicCalendar from './features/share/PublicCalendar';
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
             </AuthGuard>
           }
         />
+        <Route path="/shared/:token" element={<PublicCalendar />} />
         <Route path="/" element={<Navigate to="/calendar" replace />} />
       </Routes>
     </BrowserRouter>
