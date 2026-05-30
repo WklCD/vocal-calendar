@@ -21,6 +21,13 @@ class Settings(BaseSettings):
     # CORS
     CORS_ORIGINS: list[str] = ["http://localhost:5173"]
 
+    # LLM
+    LLM_PROVIDER: str = "mock"  # qwen / openai / glm / mimo / mock
+    MIMO_API_KEY: str = ""
+    QWEN_API_KEY: str = ""
+    OPENAI_API_KEY: str = ""
+    GLM_API_KEY: str = ""
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
