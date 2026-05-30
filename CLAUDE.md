@@ -120,13 +120,14 @@ backend/                    # FastAPI API server
 ## Git 要求
 
 - 开发周期内保持**持续的 PR 记录和 commit 提交**
+- **commit message 使用中文**，格式：`类型: 中文描述`
 - 使用 **conventional commits** 格式：
-  - `feat:` 新功能
-  - `fix:` 修复 bug
-  - `test:` 测试相关
-  - `chore:` 构建/工具/配置
-  - `docs:` 文档
-  - `refactor:` 重构
+  - `feat:` 新功能（例：`feat: 添加用户注册接口`）
+  - `fix:` 修复 bug（例：`fix: 修复登录token过期问题`）
+  - `test:` 测试相关（例：`test: 添加认证服务单元测试`）
+  - `chore:` 构建/工具/配置（例：`chore: 初始化项目结构`）
+  - `docs:` 文档（例：`docs: 更新API文档`）
+  - `refactor:` 重构（例：`refactor: 优化数据库查询逻辑`）
 - 每个 commit 对应一个完整的、可运行的变更
 
 ## Testing Requirements
