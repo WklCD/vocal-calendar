@@ -94,10 +94,12 @@ export default function CalendarPage() {
         </div>
       )}
 
-      <main style={{ flex: 1, padding: 'var(--space-4)', overflow: 'hidden' }}>
+      <main style={{ flex: 1, padding: 'var(--space-4)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         <DailyBriefing />
         <FreeSlotSuggest />
-        <CalendarView onEventClick={(event) => { setEditingEvent(event); setIsModalOpen(true); }} onEventContextMenu={(event, position) => { setContextMenu({ isOpen: true, position, event }); }} />
+        <div style={{ flex: 1, minHeight: 0 }}>
+          <CalendarView onEventClick={(event) => { setEditingEvent(event); setIsModalOpen(true); }} onEventContextMenu={(event, position) => { setContextMenu({ isOpen: true, position, event }); }} />
+        </div>
       </main>
 
       <EventModal isOpen={isModalOpen} event={editingEvent} onSubmit={handleSubmitEvent} onClose={() => { setIsModalOpen(false); setEditingEvent(null); }} />

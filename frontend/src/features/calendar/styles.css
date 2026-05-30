@@ -1,3 +1,8 @@
+/* Calendar container */
+.calendar-view {
+  height: 100%;
+}
+
 /* === FullCalendar Theme Overrides === */
 .fc {
   --fc-border-color: var(--color-border);

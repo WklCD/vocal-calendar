@@ -28,7 +28,12 @@
       "Bash(docker exec vocal-calendar-db *)",
       "Bash(pytest *)",
       "Bash(python -m pytest -v --tb=short)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(curl -s http://localhost:5173)",
+      "Bash(curl -s -X POST https://api.xiaomimimo.com/v1/chat/completions --header 'api-key: tp-ciqiip7sop9tjp4il43pyhck1zgg5i6t018aws86lv7dli3l' --header 'Content-Type: application/json' --data-raw '{ *)",
+      "Bash(python -m pytest tests/test_ai_service.py -v --tb=short)",
+      "Bash(git reset *)",
+      "Bash(npm run *)"
     ]
   }
 }

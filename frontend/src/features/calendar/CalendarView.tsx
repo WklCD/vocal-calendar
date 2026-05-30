@@ -41,7 +41,7 @@ export default function CalendarView({ onEventClick, onEventContextMenu }: Calen
         selectMirror={true}
         dayMaxEvents={3}
         weekends={true}
-        height="calc(100vh - var(--topbar-height) - var(--space-8))"
+        height="100%"
         viewDidMount={(info) => { setCurrentView(info.view.type as CalendarViewType); }}
         datesSet={(info) => {
           setCurrentDate(info.view.currentStart);
