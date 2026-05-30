@@ -102,12 +102,12 @@ export default function CalendarPage() {
         </div>
       )}
 
-      <main style={{ flex: 1, padding: 'var(--space-4)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+      <main style={{ flex: 1, padding: 'var(--space-4)', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
         <DailyBriefing />
         <FreeSlotSuggest />
         <HolidayBadge year={new Date().getFullYear()} month={new Date().getMonth() + 1} />
         <TimeStats />
-        <div style={{ flex: 1, minHeight: 0 }}>
+        <div style={{ flex: 1, minHeight: '500px' }}>
           <CalendarView onEventClick={(event) => { setEditingEvent(event); setIsModalOpen(true); }} onEventContextMenu={(event, position) => { setContextMenu({ isOpen: true, position, event }); }} />
         </div>
       </main>
