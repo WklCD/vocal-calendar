@@ -52,6 +52,8 @@ class VoiceService:
             return await self._delete_event(user_id, entities)
         elif intent == "query":
             return await self._query_events(user_id, entities)
+        elif intent == "modify":
+            return await self._modify_event(user_id, entities)
 
         return {"status": "noop"}
 
@@ -128,6 +130,66 @@ class VoiceService:
                 for e in events
             ],
         }
+
+    async def _modify_event(self, user_id: str, entities: dict) -> dict:
+        """修改事件（按标题模糊匹配）。"""
+        title = entities.get("title", "")
+        event = (
+            self.db.query(Event)
+            .filter(
+                Event.user_id == user_id,
+                Event.title.ilike(f"%{title}%"),
+            )
+            .first()
+        )
+        if not event:
+            return {"status": "not_found"}
+
+        # Update fields from entities
+        if entities.get("title"):
+            event.title = entities["title"]
+
+        # Handle date and time updates for start_time/end_time
+        date_str = entities.get("date")
+        time_str = entities.get("time")
+        duration = entities.get("duration")
+
+        if date_str or time_str:
+            # Parse new date or keep existing
+            if date_str:
+                new_date = datetime.fromisoformat(date_str).date()
+            else:
+                new_date = event.start_time.date()
+
+            # Parse new time or keep existing
+            if time_str:
+                new_time = datetime.fromisoformat(f"2000-01-01T{time_str}:00").time()
+            else:
+                new_time = event.start_time.time()
+
+            new_start = datetime.combine(new_date, new_time).replace(
+                tzinfo=timezone.utc
+            )
+
+            # Calculate new end time
+            if duration:
+                new_end = new_start + timedelta(minutes=duration)
+            else:
+                # Preserve original duration
+                original_duration = event.end_time - event.start_time
+                new_end = new_start + original_duration
+
+            event.start_time = new_start
+            event.end_time = new_end
+
+        if entities.get("location"):
+            event.location = entities["location"]
+
+        if entities.get("priority"):
+            event.priority = entities["priority"]
+
+        self.db.commit()
+        return {"status": "modified", "event_id": event.id}
 
     def get_logs(self, user_id: str, limit: int = 50) -> list[VoiceLog]:
         """获取语音指令历史。"""

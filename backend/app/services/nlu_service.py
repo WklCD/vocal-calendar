@@ -88,6 +88,8 @@ class NLUService:
         elif intent == "modify":
             return f"好的，已修改：{title}"
         elif intent == "query":
-            return f"正在查询：{title}"
+            if date:
+                return f"好的，正在查询{date}的安排"
+            return "好的，正在查询"
 
         return "已处理你的请求。"
