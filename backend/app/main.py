@@ -25,7 +25,8 @@ from app.api.voice import router as voice_router
 from app.api.ai import router as ai_router
 from app.api.websocket import router as websocket_router
 from app.api.reminders import router as reminders_router
-from app.tasks.reminder_task import start_scheduler, stop_scheduler
+from app.tasks.reminder_task import start_scheduler, stop_scheduler, scheduler
+from app.tasks.daily_briefing import register_briefing_jobs
 
 app.include_router(health_router)
 app.include_router(auth_router)
@@ -40,6 +41,7 @@ app.include_router(reminders_router)
 @app.on_event("startup")
 async def on_startup() -> None:
     start_scheduler()
+    register_briefing_jobs(scheduler)
 
 
 @app.on_event("shutdown")
