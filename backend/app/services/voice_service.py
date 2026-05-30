@@ -63,19 +63,16 @@ class VoiceService:
         date_str = entities.get("date")
         time_str = entities.get("time")
         duration = entities.get("duration", 60)
-        # 中国时区 UTC+8
-        china_tz = timezone(timedelta(hours=8))
 
         if date_str and time_str:
-            # 用户输入的是本地时间（中国时区），转为 UTC 存储
-            local_time = datetime.fromisoformat(f"{date_str}T{time_str}:00").replace(tzinfo=china_tz)
-            start = local_time.astimezone(timezone.utc)
+            start = datetime.fromisoformat(f"{date_str}T{time_str}:00")
         elif date_str:
-            local_time = datetime.fromisoformat(f"{date_str}T09:00:00").replace(tzinfo=china_tz)
-            start = local_time.astimezone(timezone.utc)
+            start = datetime.fromisoformat(f"{date_str}T09:00:00")
         else:
             start = datetime.now(timezone.utc).replace(second=0, microsecond=0)
 
+        # Apply timezone
+        start = start.replace(tzinfo=timezone.utc)
         end = start + timedelta(minutes=duration)
 
         event = Event(
@@ -157,24 +154,22 @@ class VoiceService:
         time_str = entities.get("time")
         duration = entities.get("duration")
 
-        china_tz = timezone(timedelta(hours=8))
-
         if date_str or time_str:
             # Parse new date or keep existing
             if date_str:
                 new_date = datetime.fromisoformat(date_str).date()
             else:
-                new_date = event.start_time.astimezone(china_tz).date()
+                new_date = event.start_time.date()
 
             # Parse new time or keep existing
             if time_str:
                 new_time = datetime.fromisoformat(f"2000-01-01T{time_str}:00").time()
             else:
-                new_time = event.start_time.astimezone(china_tz).time()
+                new_time = event.start_time.time()
 
-            # 本地时间转 UTC 存储
-            local_start = datetime.combine(new_date, new_time).replace(tzinfo=china_tz)
-            new_start = local_start.astimezone(timezone.utc)
+            new_start = datetime.combine(new_date, new_time).replace(
+                tzinfo=timezone.utc
+            )
 
             # Calculate new end time
             if duration:
