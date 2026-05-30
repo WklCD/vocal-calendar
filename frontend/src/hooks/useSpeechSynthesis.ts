@@ -12,32 +12,44 @@ interface UseSpeechSynthesisReturn {
 export function useSpeechSynthesis(): UseSpeechSynthesisReturn {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const { voice } = useTtsStore();
-  const speakingRef = useRef(false);
+  const activeRef = useRef(false);
+  const seqRef = useRef(0);
 
   const isSupported = true;
 
   const speak = useCallback(async (text: string) => {
-    if (speakingRef.current) {
-      ttsApi.stopAudio();
-    }
+    // 停止当前播放
+    ttsApi.stopAudio();
+
+    const mySeq = ++seqRef.current;
+    activeRef.current = true;
+    setIsSpeaking(true);
 
     try {
-      speakingRef.current = true;
-      setIsSpeaking(true);
-
       const audioBase64 = await ttsApi.synthesize(text, voice);
-      await ttsApi.playAudio(audioBase64);
+
+      // 检查是否被更新的调用取代
+      if (mySeq !== seqRef.current || !activeRef.current) {
+        return;
+      }
+
+      if (audioBase64) {
+        await ttsApi.playAudio(audioBase64);
+      }
     } catch (error) {
-      console.error('TTS synthesis failed:', error);
+      console.error('TTS failed:', error);
     } finally {
-      speakingRef.current = false;
-      setIsSpeaking(false);
+      // 只有当前调用才清除状态
+      if (mySeq === seqRef.current) {
+        activeRef.current = false;
+        setIsSpeaking(false);
+      }
     }
   }, [voice]);
 
   const stop = useCallback(() => {
+    activeRef.current = false;
     ttsApi.stopAudio();
-    speakingRef.current = false;
     setIsSpeaking(false);
   }, []);
 

@@ -123,7 +123,7 @@ async def text_to_speech(
         },
     }
 
-    async with httpx.AsyncClient(timeout=30.0) as client:
+    async with httpx.AsyncClient(timeout=60.0) as client:
         try:
             resp = await client.post(
                 "https://token-plan-cn.xiaomimimo.com/v1/chat/completions",

@@ -20,27 +20,60 @@ export const MIMO_VOICES: MiMoVoice[] = [
 ];
 
 let currentAudio: HTMLAudioElement | null = null;
+let currentAbortController: AbortController | null = null;
+let requestCounter = 0;
 
 export const ttsApi = {
   async synthesize(text: string, voice: string = 'mimo_default'): Promise<string> {
-    const resp = await api.post('/ai/tts', { text, voice });
-    return resp.data.data.audio;
+    // 取消之前的请求
+    if (currentAbortController) {
+      currentAbortController.abort();
+    }
+    currentAbortController = new AbortController();
+    const myRequest = ++requestCounter;
+
+    try {
+      const resp = await api.post('/ai/tts', { text, voice }, {
+        signal: currentAbortController.signal,
+        timeout: 60000, // 60秒超时
+      });
+
+      // 检查是否已被更新的请求取代
+      if (myRequest !== requestCounter) {
+        return ''; // 静默丢弃过期结果
+      }
+
+      return resp.data.data.audio;
+    } catch (err: any) {
+      if (err.name === 'CanceledError' || err.name === 'AbortError') {
+        return ''; // 请求被取消
+      }
+      throw err;
+    }
   },
 
   playAudio(base64Data: string): Promise<void> {
     return new Promise((resolve) => {
+      if (!base64Data) {
+        resolve();
+        return;
+      }
       this.stopAudio();
       const audio = new Audio(`data:audio/wav;base64,${base64Data}`);
       currentAudio = audio;
+
       audio.onended = () => {
-        currentAudio = null;
+        if (currentAudio === audio) currentAudio = null;
         resolve();
       };
       audio.onerror = () => {
-        currentAudio = null;
+        if (currentAudio === audio) currentAudio = null;
         resolve();
       };
-      audio.play();
+      audio.play().catch(() => {
+        if (currentAudio === audio) currentAudio = null;
+        resolve();
+      });
     });
   },
 
@@ -48,8 +81,14 @@ export const ttsApi = {
     if (currentAudio) {
       currentAudio.pause();
       currentAudio.currentTime = 0;
+      currentAudio.src = '';
       currentAudio = null;
     }
+    if (currentAbortController) {
+      currentAbortController.abort();
+      currentAbortController = null;
+    }
+    requestCounter++; // 使所有进行中的请求结果失效
   },
 
   get isPlaying(): boolean {

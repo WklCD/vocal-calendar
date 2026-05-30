@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { MIMO_VOICES, ttsApi } from '../../services/ttsApi';
 import { useTtsStore } from '../../stores/useTtsStore';
 
@@ -10,16 +10,22 @@ const SAMPLE_TEXTS: Record<string, string> = {
 export default function VoiceSelector() {
   const { voice, setVoice } = useTtsStore();
   const [previewingVoice, setPreviewingVoice] = useState<string | null>(null);
+  const seqRef = useRef(0);
 
   const zhVoices = MIMO_VOICES.filter((v) => v.lang === 'zh');
   const enVoices = MIMO_VOICES.filter((v) => v.lang === 'en');
 
   const handlePreview = async (voiceId: string) => {
-    if (previewingVoice) {
+    // 如果正在播放同一个音色，停止
+    if (previewingVoice === voiceId) {
       ttsApi.stopAudio();
       setPreviewingVoice(null);
       return;
     }
+
+    // 停止当前播放
+    ttsApi.stopAudio();
+    const mySeq = ++seqRef.current;
 
     const voiceInfo = MIMO_VOICES.find((v) => v.id === voiceId);
     const sampleText = voiceInfo?.lang === 'en' ? SAMPLE_TEXTS.en : SAMPLE_TEXTS.zh;
@@ -27,11 +33,19 @@ export default function VoiceSelector() {
     try {
       setPreviewingVoice(voiceId);
       const audioBase64 = await ttsApi.synthesize(sampleText, voiceId);
-      await ttsApi.playAudio(audioBase64);
+
+      // 检查是否被新的预览取代
+      if (mySeq !== seqRef.current) return;
+
+      if (audioBase64) {
+        await ttsApi.playAudio(audioBase64);
+      }
     } catch (error) {
       console.error('Voice preview failed:', error);
     } finally {
-      setPreviewingVoice(null);
+      if (mySeq === seqRef.current) {
+        setPreviewingVoice(null);
+      }
     }
   };
 
