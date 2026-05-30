@@ -5,34 +5,40 @@ from app.services.llm.base import BaseLLM
 from app.core.config import get_settings
 
 
-PARSE_PROMPT = """你是一个日历助手，负责将用户的自然语言指令解析为结构化的日历操作。
-
-请分析以下用户输入，返回 JSON 格式的解析结果：
+PARSE_PROMPT = """你是一个日历助手。将用户的自然语言解析为JSON。
 
 用户输入: "{text}"
 
 {context_section}
 
-请返回以下 JSON 格式（不要返回其他内容）:
+严格按以下JSON格式返回，不要返回其他内容:
 {{
-    "intent": "create" | "delete" | "modify" | "query",
+    "intent": "create",
     "entities": {{
-        "title": "事件标题",
+        "title": "事件名称",
         "date": "YYYY-MM-DD",
         "time": "HH:MM",
-        "duration": 分钟数,
-        "location": "地点",
-        "priority": 1-5
+        "duration": 60,
+        "location": null,
+        "priority": 3
     }},
-    "confidence": 0.0-1.0,
-    "need_clarify": true/false,
-    "clarify_question": "需要追问的问题"
+    "confidence": 0.9,
+    "need_clarify": false,
+    "clarify_question": null
 }}
 
-注意:
-- 如果用户没有明确指定日期，根据"今天"、"明天"、"后天"、"下周X"等推算
-- 如果信息不完整，设置 need_clarify=true 并给出追问问题
-- confidence 根据信息完整度和明确程度判断
+规则:
+- title: 只提取事件名称（如"会议"、"项目讨论"），不要包含时间地点等修饰词
+- date: 今天是2026-05-30，根据"明天"、"后天"、"下周X"等推算具体日期
+- time: 24小时制，"下午3点"→"15:00"，"上午10点"→"10:00"
+- duration: 默认60分钟，除非用户指定了时长
+- intent: create/delete/modify/query
+- confidence: 如果能识别出事件名称和时间，给0.9以上
+- 只要能理解意图，就不要设置need_clarify=true
+
+示例:
+输入: "帮我创建明天下午三点的会议"
+输出: {{"intent":"create","entities":{{"title":"会议","date":"2026-05-31","time":"15:00","duration":60,"location":null,"priority":3}},"confidence":0.95,"need_clarify":false,"clarify_question":null}}
 """
 
 
