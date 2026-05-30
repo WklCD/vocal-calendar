@@ -4,20 +4,16 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import listPlugin from '@fullcalendar/list';
 import interactionPlugin from '@fullcalendar/interaction';
 import { useEventStore } from '../../stores/useEventStore';
-import type { CalendarViewType } from './types';
+import type { CalendarEvent, CalendarViewType } from './types';
 import './styles.css';
 
-export default function CalendarView() {
-  const { events, currentView, currentDate, setCurrentView, setCurrentDate } =
-    useEventStore();
+interface CalendarViewProps {
+  onEventClick?: (event: CalendarEvent) => void;
+  onEventContextMenu?: (event: CalendarEvent, position: { x: number; y: number }) => void;
+}
 
-  const handleViewChange = (view: CalendarViewType) => {
-    setCurrentView(view);
-  };
-
-  const handleDateChange = (date: Date) => {
-    setCurrentDate(date);
-  };
+export default function CalendarView({ onEventClick, onEventContextMenu }: CalendarViewProps) {
+  const { events, currentView, currentDate, setCurrentView, setCurrentDate } = useEventStore();
 
   const calendarEvents = events.map((event) => ({
     id: event.id,
@@ -27,11 +23,7 @@ export default function CalendarView() {
     allDay: event.allDay,
     backgroundColor: event.color,
     borderColor: event.color,
-    extendedProps: {
-      location: event.location,
-      description: event.description,
-      priority: event.priority,
-    },
+    extendedProps: { location: event.location, description: event.description, priority: event.priority, originalEvent: event },
   }));
 
   return (
@@ -40,18 +32,8 @@ export default function CalendarView() {
         plugins={[dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin]}
         initialView={currentView}
         initialDate={currentDate}
-        headerToolbar={{
-          left: 'prev,next today',
-          center: 'title',
-          right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek',
-        }}
-        buttonText={{
-          today: '今天',
-          month: '月',
-          week: '周',
-          day: '日',
-          list: '列表',
-        }}
+        headerToolbar={{ left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek' }}
+        buttonText={{ today: '今天', month: '月', week: '周', day: '日', list: '列表' }}
         locale="zh-cn"
         events={calendarEvents}
         editable={true}
@@ -60,21 +42,22 @@ export default function CalendarView() {
         dayMaxEvents={3}
         weekends={true}
         height="calc(100vh - var(--topbar-height) - var(--space-8))"
-        viewDidMount={(info) => {
-          handleViewChange(info.view.type as CalendarViewType);
+        viewDidMount={(info) => { setCurrentView(info.view.type as CalendarViewType); }}
+        datesSet={(info) => { setCurrentDate(info.view.currentStart); }}
+        eventClick={(info) => { const originalEvent = info.event.extendedProps.originalEvent; if (originalEvent && onEventClick) { onEventClick(originalEvent); } }}
+        eventDidMount={(info) => {
+          if (onEventContextMenu) {
+            info.el.addEventListener('contextmenu', (e) => {
+              e.preventDefault();
+              const originalEvent = info.event.extendedProps.originalEvent;
+              if (originalEvent) {
+                onEventContextMenu(originalEvent, { x: e.clientX, y: e.clientY });
+              }
+            });
+          }
         }}
-        datesSet={(info) => {
-          handleDateChange(info.view.currentStart);
-        }}
-        eventClick={(info) => {
-          console.log('Event clicked:', info.event.title);
-        }}
-        select={(info) => {
-          console.log('Date selected:', info.startStr, info.endStr);
-        }}
-        eventDrop={(info) => {
-          console.log('Event dropped:', info.event.title, info.event.startStr);
-        }}
+        select={(info) => { console.log('Date selected:', info.startStr, info.endStr); }}
+        eventDrop={(info) => { console.log('Event dropped:', info.event.title, info.event.startStr); }}
       />
     </div>
   );
