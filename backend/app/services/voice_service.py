@@ -88,17 +88,82 @@ class VoiceService:
 
         return {"status": "created", "event_id": event.id}
 
-    async def _delete_event(self, user_id: str, entities: dict) -> dict:
-        """删除事件（按标题模糊匹配）。"""
+    def _find_event(self, user_id: str, entities: dict) -> Event | None:
+        """根据实体信息查找最匹配的事件。
+
+        采用渐进式匹配策略：
+        1. 标题+日期+时间（最精确）
+        2. 日期+时间（忽略标题，找到那个时间段的事件）
+        3. 标题+日期（忽略时间）
+        4. 标题（第一个匹配）
+        """
         title = entities.get("title", "")
-        event = (
-            self.db.query(Event)
-            .filter(
-                Event.user_id == user_id,
-                Event.title.ilike(f"%{title}%"),
-            )
-            .first()
-        )
+        date_str = entities.get("date")
+        time_str = entities.get("time")
+
+        def _base_query():
+            return self.db.query(Event).filter(Event.user_id == user_id)
+
+        def _apply_date(q, ds):
+            if ds:
+                d = datetime.fromisoformat(ds).date()
+                day_start = datetime.combine(d, datetime.min.time()).replace(tzinfo=timezone.utc)
+                day_end = day_start + timedelta(days=1)
+                q = q.filter(Event.start_time >= day_start, Event.start_time < day_end)
+            return q
+
+        def _apply_time(q, ts, ds):
+            if ts:
+                hour, minute = map(int, ts.split(":"))
+                ref_date = datetime.fromisoformat(ds).date() if ds else datetime.now(timezone.utc).date()
+                target = datetime.combine(
+                    ref_date, datetime.min.time().replace(hour=hour, minute=minute)
+                ).replace(tzinfo=timezone.utc)
+                q = q.filter(
+                    Event.start_time >= target - timedelta(minutes=30),
+                    Event.start_time <= target + timedelta(minutes=30),
+                )
+            return q
+
+        # 策略1: 标题+日期+时间
+        if title and date_str and time_str:
+            q = _base_query()
+            q = q.filter(Event.title.ilike(f"%{title}%"))
+            q = _apply_date(q, date_str)
+            q = _apply_time(q, time_str, date_str)
+            result = q.first()
+            if result:
+                return result
+
+        # 策略2: 日期+时间（忽略标题，找到那个时间段的事件）
+        if date_str and time_str:
+            q = _base_query()
+            q = _apply_date(q, date_str)
+            q = _apply_time(q, time_str, date_str)
+            result = q.first()
+            if result:
+                return result
+
+        # 策略3: 标题+日期
+        if title and date_str:
+            q = _base_query()
+            q = q.filter(Event.title.ilike(f"%{title}%"))
+            q = _apply_date(q, date_str)
+            result = q.first()
+            if result:
+                return result
+
+        # 策略4: 仅标题
+        if title:
+            q = _base_query()
+            q = q.filter(Event.title.ilike(f"%{title}%"))
+            return q.first()
+
+        return None
+
+    async def _delete_event(self, user_id: str, entities: dict) -> dict:
+        """删除事件（按标题+日期+时间精确匹配）。"""
+        event = self._find_event(user_id, entities)
         if event:
             self.db.delete(event)
             self.db.commit()
@@ -132,16 +197,9 @@ class VoiceService:
         }
 
     async def _modify_event(self, user_id: str, entities: dict) -> dict:
-        """修改事件（按标题模糊匹配）。"""
-        title = entities.get("title", "")
-        event = (
-            self.db.query(Event)
-            .filter(
-                Event.user_id == user_id,
-                Event.title.ilike(f"%{title}%"),
-            )
-            .first()
-        )
+        """修改事件（按标题+日期+时间精确匹配）。"""
+        # 查找要修改的事件（使用原始标题+日期+时间匹配）
+        event = self._find_event(user_id, entities)
         if not event:
             return {"status": "not_found"}
 
@@ -205,7 +263,7 @@ class VoiceService:
         """获取语音指令帮助列表。"""
         return [
             {"command": "创建事件", "example": "帮我创建明天下午3点的会议", "description": "创建新的日历事件"},
-            {"command": "删除事件", "example": "删除明天的会议", "description": "删除指定事件"},
+            {"command": "删除事件", "example": "删除明天5点的会议", "description": "删除指定事件"},
             {"command": "查询事件", "example": "我明天有什么安排", "description": "查询指定时间的事件"},
-            {"command": "修改事件", "example": "把明天的会议改到后天", "description": "修改已有事件"},
+            {"command": "修改事件", "example": "修改明天的会议到下午五点", "description": "修改已有事件"},
         ]

@@ -31,8 +31,8 @@ class NLUService:
         # 调用 LLM 解析
         result = await self.llm.parse_calendar_command(text, context)
 
-        # 后处理：补充相对日期
-        result = self._resolve_relative_dates(result)
+        # 后处理：补充相对日期（传入原始文本以便检测）
+        result = self._resolve_relative_dates(result, text)
 
         # 生成响应文本
         response_text = self._generate_response(result)
@@ -46,18 +46,21 @@ class NLUService:
 
         return result
 
-    def _resolve_relative_dates(self, result: dict) -> dict:
+    def _resolve_relative_dates(self, result: dict, original_text: str = "") -> dict:
         """解析相对日期（明天、后天、下周X等）。"""
         entities = result.get("entities", {})
         if not entities.get("date"):
             today = datetime.now(timezone.utc).date()
-            title = entities.get("title", "")
+            # 检查原始文本（而非仅标题），因为日期词可能在文本的任何位置
+            text_to_check = original_text or entities.get("title", "")
 
-            if "明天" in title:
-                entities["date"] = (today + timedelta(days=1)).isoformat()
-            elif "后天" in title:
+            if "大后天" in text_to_check:
+                entities["date"] = (today + timedelta(days=3)).isoformat()
+            elif "后天" in text_to_check:
                 entities["date"] = (today + timedelta(days=2)).isoformat()
-            elif "今天" in title:
+            elif "明天" in text_to_check:
+                entities["date"] = (today + timedelta(days=1)).isoformat()
+            elif "今天" in text_to_check:
                 entities["date"] = today.isoformat()
 
             result["entities"] = entities
