@@ -249,3 +249,5 @@ QWEN_API_KEY=              # 通义千问 API Key
 OPENAI_API_KEY=            # OpenAI API Key
 GLM_API_KEY=               # 智谱 GLM API Key
 ```
+## demo视频链接
+2.53 复制打开抖音，看看【wwkkll的作品】语音日历介绍  https://v.douyin.com/P-Yg6PBI4lo/ :3pm E@u.Fh Ate:/ 04/07 
