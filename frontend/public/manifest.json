@@ -1,0 +1,18 @@
+{
+  "name": "Vocal Calendar",
+  "short_name": "VocalCal",
+  "description": "语音驱动的日历工具，支持语音交互管理日程、AI 智能辅助、多层级提醒",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4285F4",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

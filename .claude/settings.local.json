@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git remote *)",
+      "Bash(git config *)",
+      "Bash(chmod +x *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git pull *)",
+      "Bash(git stash *)",
+      "Bash(git push *)",
+      "Bash(git checkout *)",
+      "Bash(npm create *)",
+      "Bash(npm install *)",
+      "Bash(npx vite *)",
+      "Bash(pip install *)",
+      "Bash(pip3 install *)",
+      "Bash(python3 *)",
+      "Bash(npx vitest *)",
+      "Bash(npm --version)",
+      "Bash(docker --version)",
+      "Bash(docker compose *)",
+      "Bash(pip3 --version)",
+      "Bash(git --version)",
+      "Bash(brew --version)",
+      "Bash(alembic revision *)",
+      "Bash(alembic upgrade *)",
+      "Bash(docker exec vocal-calendar-db *)",
+      "Bash(pytest *)",
+      "Bash(python -m pytest -v --tb=short)",
+      "Bash(npx tsc *)",
+      "Bash(curl -s http://localhost:5173)",
+      "Bash(curl -s -X POST https://api.xiaomimimo.com/v1/chat/completions --header 'api-key: tp-ciqiip7sop9tjp4il43pyhck1zgg5i6t018aws86lv7dli3l' --header 'Content-Type: application/json' --data-raw '{ *)",
+      "Bash(python -m pytest tests/test_ai_service.py -v --tb=short)",
+      "Bash(git reset *)",
+      "Bash(npm run *)"
+    ]
+  }
+}
