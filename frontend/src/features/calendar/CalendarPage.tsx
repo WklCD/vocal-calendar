@@ -11,7 +11,7 @@ import WeatherBadge from '../weather/WeatherBadge';
 import HolidayBadge from '../holidays/HolidayBadge';
 import TimeStats from '../stats/TimeStats';
 import ShareLink from '../share/ShareLink';
-import ExportMenu from '../export/ExportMenu';
+import ExportImportMenu from '../../components/ExportImportMenu';
 import { useAuthStore } from '../../stores/useAuthStore';
 import { useEventStore } from '../../stores/useEventStore';
 import { useNavigate } from 'react-router-dom';
@@ -33,7 +33,6 @@ export default function CalendarPage() {
     const start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
     const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
     fetchEvents(start, end);
-    // Fallback: loadMockEvents() for development without backend
   }, [fetchEvents]);
 
   const handleLogout = () => { logout(); navigate('/login'); };
@@ -55,6 +54,13 @@ export default function CalendarPage() {
     setContextMenu({ isOpen: false, position: { x: 0, y: 0 }, event: null });
   };
 
+  const handleImportSuccess = () => {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
+    fetchEvents(start, end);
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
       <header style={{ height: 'var(--topbar-height)', background: 'var(--color-surface)', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 var(--space-6)', flexShrink: 0 }}>
@@ -63,6 +69,7 @@ export default function CalendarPage() {
           <WeatherBadge />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
+          <ExportImportMenu onImportSuccess={handleImportSuccess} />
           <button onClick={handleCreateEvent} style={{ padding: 'var(--space-2) var(--space-4)', background: 'var(--color-primary)', color: 'var(--color-text-inverse)', borderRadius: 'var(--radius-md)', fontSize: 'var(--font-size-sm)', fontWeight: 600 }}>+ 新建事件</button>
           <button
             onClick={() => setIsSettingsOpen(!isSettingsOpen)}
@@ -98,7 +105,6 @@ export default function CalendarPage() {
         }}>
           <VoiceSelector />
           <ShareLink />
-          <ExportMenu />
         </div>
       )}
 

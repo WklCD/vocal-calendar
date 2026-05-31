@@ -27,7 +27,7 @@ def upgrade() -> None:
     sa.Column('parsed_intent', sa.String(length=50), nullable=True),
     sa.Column('parsed_entities', sa.JSON(), nullable=True),
     sa.Column('response_text', sa.Text(), nullable=True),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.func.current_timestamp(), nullable=False),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )

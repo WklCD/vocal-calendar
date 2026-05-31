@@ -3,7 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/useAuthStore';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const loginSchema = z.object({
   email: z.string().email('请输入有效的邮箱地址'),
@@ -25,8 +25,13 @@ export default function LoginPage() {
     resolver: zodResolver(loginSchema),
   });
 
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/calendar');
+    }
+  }, [isAuthenticated, navigate]);
+
   if (isAuthenticated) {
-    navigate('/calendar');
     return null;
   }
 

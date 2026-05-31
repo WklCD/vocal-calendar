@@ -28,6 +28,8 @@ from app.api.reminders import router as reminders_router
 from app.api.weather import router as weather_router
 from app.api.holidays import router as holidays_router
 from app.api.share import router as share_router
+from app.api.lunar import router as lunar_router
+from app.api.export_import import router as export_import_router
 from app.tasks.reminder_task import start_scheduler, stop_scheduler, scheduler
 from app.tasks.daily_briefing import register_briefing_jobs
 
@@ -42,6 +44,8 @@ app.include_router(reminders_router)
 app.include_router(weather_router)
 app.include_router(holidays_router)
 app.include_router(share_router)
+app.include_router(lunar_router)
+app.include_router(export_import_router)
 
 
 @app.on_event("startup")

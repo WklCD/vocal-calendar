@@ -27,7 +27,7 @@ def upgrade() -> None:
     sa.Column('remind_at', sa.DateTime(timezone=True), nullable=False),
     sa.Column('type', sa.String(length=20), nullable=True),
     sa.Column('status', sa.String(length=20), nullable=True),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.func.current_timestamp(), nullable=False),
     sa.ForeignKeyConstraint(['event_id'], ['events.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
