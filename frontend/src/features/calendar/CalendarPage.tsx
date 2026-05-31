@@ -9,7 +9,6 @@ import FreeSlotSuggest from '../ai/FreeSlotSuggest';
 import VoiceSelector from '../settings/VoiceSelector';
 import WeatherBadge from '../weather/WeatherBadge';
 import HolidayBadge from '../holidays/HolidayBadge';
-import TimeStats from '../stats/TimeStats';
 import ShareLink from '../share/ShareLink';
 import ExportImportMenu from '../../components/ExportImportMenu';
 import { useAuthStore } from '../../stores/useAuthStore';
@@ -112,7 +111,6 @@ export default function CalendarPage() {
         <DailyBriefing />
         <FreeSlotSuggest />
         <HolidayBadge year={new Date().getFullYear()} month={new Date().getMonth() + 1} />
-        <TimeStats />
         <div style={{ flex: 1, minHeight: '500px' }}>
           <CalendarView onEventClick={(event) => { setEditingEvent(event); setIsModalOpen(true); }} onEventContextMenu={(event, position) => { setContextMenu({ isOpen: true, position, event }); }} />
         </div>
